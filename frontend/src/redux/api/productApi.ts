@@ -4,7 +4,7 @@ import type { Product, ProductsResponse, ProductFormData } from '../../types';
 export const productApi = createApi({
   reducerPath: 'productApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:5000/api',
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://smart-inventory-order-management-sy-indol.vercel.app/',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) {
