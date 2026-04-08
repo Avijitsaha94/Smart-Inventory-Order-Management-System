@@ -20,6 +20,7 @@ connectDB();
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'https://smart-inventory-order-management-sy-two.vercel.app/',
     process.env.FRONTEND_URL || '*'
   ],
   credentials: true
