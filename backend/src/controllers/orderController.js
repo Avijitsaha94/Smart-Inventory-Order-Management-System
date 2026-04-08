@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 // 🛒 Create Order
 export const createOrder = async (req, res) => {
   try {
+    
     const { products, customerInfo, notes } = req.body;
 
     if (!products || products.length === 0) {
@@ -15,9 +16,11 @@ export const createOrder = async (req, res) => {
 
     let orderProducts = [];
     let totalAmount = 0;
+    let productDocs = [];
 
-    for (let item of products) {
+    for (let item of products) {    
       const product = await Product.findById(item.product);
+     
 
       if (!product) {
         return res.status(404).json({
@@ -44,11 +47,10 @@ export const createOrder = async (req, res) => {
       });
 
       totalAmount += subtotal;
-
-      // 🔻 Reduce stock
-      product.stock -= item.quantity;
-      await product.save();
+      productDocs.push({ doc: product, quantity: item.quantity });
     }
+
+  
 
     const order = await Order.create({
       products: orderProducts,
@@ -58,15 +60,26 @@ export const createOrder = async (req, res) => {
       notes,
     });
 
+
+
+    for (let { doc, quantity } of productDocs) {
+      doc.stock -= quantity;
+      await doc.save();
+    }
+
+   
+
     const populatedOrder = await Order.findById(order._id)
       .populate('orderedBy', 'name email')
       .populate('products.product', 'name sku');
+
 
     res.status(201).json({
       success: true,
       data: populatedOrder,
     });
   } catch (error) {
+    console.log('=== ERROR ===', error);
     res.status(500).json({
       success: false,
       message: error.message,
@@ -220,7 +233,6 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    // 🔄 Restore stock
     for (let item of order.products) {
       const product = await Product.findById(item.product);
       if (product) {

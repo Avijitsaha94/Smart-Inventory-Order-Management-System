@@ -18,7 +18,7 @@ import {
   createOrderValidation,
   updateOrderStatusValidation,
   mongoIdValidation,
-} from '../validations/index.js';
+} from '../middleware/validators.js';
 
 // All routes require authentication
 router.use(protect);

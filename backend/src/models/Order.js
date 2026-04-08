@@ -13,8 +13,8 @@ const orderSchema = new mongoose.Schema(
           ref: 'Product',
           required: true,
         },
-        name: String, // snapshot
-        price: Number, // snapshot
+        name: String,
+        price: Number,
         quantity: {
           type: Number,
           required: true,
@@ -56,20 +56,16 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// 🧾 Generate order number automatically
-orderSchema.pre('save', async function (next) {
+// ✅ async function এ next parameter নেই
+orderSchema.pre('save', async function () {
   if (!this.orderNumber) {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-
     const count = await mongoose.model('Order').countDocuments();
-
     this.orderNumber = `ORD-${year}${month}-${String(count + 1).padStart(5, '0')}`;
   }
-  next();
 });
 
-// ✅ export
 const Order = mongoose.model('Order', orderSchema);
 export default Order;

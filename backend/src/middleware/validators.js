@@ -1,4 +1,4 @@
-// validations/index.js
+// validators.js - Validation middleware for Express routes
 
 import { body, param, query, validationResult } from 'express-validator';
 

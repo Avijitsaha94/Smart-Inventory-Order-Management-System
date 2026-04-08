@@ -17,7 +17,13 @@ const app = express();
 connectDB();
 
 // 🧱 Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    process.env.FRONTEND_URL || '*'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // 🧪 Test Route
