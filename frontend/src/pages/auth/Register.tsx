@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { setCredentials } from '../../redux/slices/authSlice';
 import axiosInstance from '../../utils/axios';
 import type { AuthResponse, RegisterData } from '../../types';
+import ThemeToggle from '../../components/shared/ThemeToggle';
 
 function Register() {
   const navigate = useNavigate();
@@ -22,66 +23,62 @@ function Register() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const response = await axiosInstance.post<AuthResponse>(
-        '/auth/register',
-        formData
-      );
-
+      const response = await axiosInstance.post<AuthResponse>('/auth/register', formData);
       const { _id, name, email, role, token } = response.data.data;
-
-      // Save to Redux store
-      dispatch(
-        setCredentials({
-          user: { _id, name, email, role, createdAt: '', updatedAt: '' },
-          token,
-        })
-      );
-
+      dispatch(setCredentials({
+        user: { _id, name, email, role, createdAt: '', updatedAt: '' },
+        token,
+      }));
       toast.success('Registration successful! 🎉');
       navigate('/dashboard');
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message ||
-        'Registration failed. Please try again.';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center
+                    bg-gradient-to-br from-primary-50 to-primary-100
+                    dark:from-slate-900 dark:to-slate-800
+                    px-4 py-12 transition-colors">
+
+      {/* Theme Toggle */}
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="max-w-md w-full">
-        {/* Logo & Title */}
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
-            <Package className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Create Account
-          </h1>
-          <p className="text-gray-600">
-            Join our inventory management system
+          <Link to="/" className="inline-flex flex-col items-center gap-3">
+            <div className="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Package className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Smart<span className="text-primary-600">Inventory</span>
+            </h1>
+          </Link>
+          <p className="text-gray-600 dark:text-slate-400 mt-2">
+            Create your account
           </p>
         </div>
 
-        {/* Register Form Card */}
-        <div className="card">
+        {/* Form Card */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl
+                        border border-gray-100 dark:border-slate-700 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Field */}
+            {/* Name */}
             <div>
-              <label htmlFor="name" className="label">
+              <label htmlFor="name" className="label dark:text-slate-300">
                 Full Name
               </label>
               <input
@@ -90,16 +87,16 @@ function Register() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="input"
+                className="input dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
                 placeholder="John Doe"
                 required
                 minLength={2}
               />
             </div>
 
-            {/* Email Field */}
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="label">
+              <label htmlFor="email" className="label dark:text-slate-300">
                 Email Address
               </label>
               <input
@@ -108,15 +105,15 @@ function Register() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="input"
+                className="input dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
                 placeholder="john@example.com"
                 required
               />
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="label">
+              <label htmlFor="password" className="label dark:text-slate-300">
                 Password
               </label>
               <input
@@ -125,19 +122,19 @@ function Register() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="input"
+                className="input dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
                 placeholder="••••••••"
                 required
                 minLength={6}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
                 Minimum 6 characters
               </p>
             </div>
 
-            {/* Role Field */}
+            {/* Role */}
             <div>
-              <label htmlFor="role" className="label">
+              <label htmlFor="role" className="label dark:text-slate-300">
                 Account Type
               </label>
               <select
@@ -145,24 +142,28 @@ function Register() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="input"
+                className="input dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               >
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
                 Admin can manage products and orders
               </p>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full btn btn-primary flex items-center justify-center gap-2
+                         py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <span>Creating account...</span>
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Creating account...</span>
+                </>
               ) : (
                 <>
                   <UserPlus className="w-5 h-5" />
@@ -172,16 +173,19 @@ function Register() {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600 dark:text-slate-400">
             Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-medium text-primary-600 hover:text-primary-700"
-            >
+            <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
               Sign in
             </Link>
-          </div>
+          </p>
+        </div>
+
+        {/* Back to Home */}
+        <div className="text-center mt-4">
+          <Link to="/" className="text-sm text-gray-500 dark:text-slate-500 hover:text-primary-600 transition-colors">
+            ← Back to Home
+          </Link>
         </div>
       </div>
     </div>

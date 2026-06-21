@@ -1,45 +1,31 @@
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
-  Package,
-  ShoppingCart,
-  DollarSign,
-  User,
-  Plus,
-  TrendingUp,
-  AlertCircle,
-  Eye,
+  Package, ShoppingCart, DollarSign, User,
+  Plus, TrendingUp, AlertCircle, Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+   BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import type { RootState } from '../redux/store';
 import { useGetDashboardStatsQuery } from '../redux/api/dashboardApi';
 import Layout from '../components/layout/Layout';
 
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
 function Dashboard() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { data, isLoading, error } = useGetDashboardStatsQuery();
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-
   if (isLoading) {
     return (
       <Layout>
-        <div className="text-center py-12">
-          <div className="inline-block w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        <div className="text-center py-20">
+          <div className="inline-block w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-500 dark:text-slate-400">Loading dashboard...</p>
         </div>
       </Layout>
     );
@@ -48,14 +34,14 @@ function Dashboard() {
   if (error) {
     return (
       <Layout>
-        <div className="card bg-red-50 border border-red-200">
-          <div className="flex items-center gap-3 text-red-800">
+        <div className="card bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-3 text-red-800 dark:text-red-400">
             <AlertCircle className="w-5 h-5" />
             <div>
               <p className="font-semibold">Failed to load dashboard</p>
               <p className="text-sm mt-1">
                 {user?.role === 'user'
-                  ? 'Dashboard is only available for admin users.'
+                  ? 'Dashboard analytics is only available for admin users.'
                   : 'Please try again later.'}
               </p>
             </div>
@@ -66,20 +52,16 @@ function Dashboard() {
   }
 
   if (!data?.data) return null;
-
   const stats = data.data;
 
-  // Format revenue chart data
-  const revenueChartData = stats.topProducts.map((product) => ({
-    name:
-      product.name.length > 15
-        ? product.name.substring(0, 15) + '...'
-        : product.name,
-    revenue: product.totalRevenue,
-    quantity: product.totalQuantity,
+  // Top products chart data
+  const revenueChartData = stats.topProducts.map((p) => ({
+    name: p.name.length > 12 ? p.name.substring(0, 12) + '…' : p.name,
+    revenue: p.totalRevenue,
+    quantity: p.totalQuantity,
   }));
 
-  // Category distribution for pie chart
+  // Category pie data
   const categoryData = stats.inventory.categoryDistribution.map((cat) => ({
     name: cat._id,
     value: cat.count,
@@ -88,128 +70,139 @@ function Dashboard() {
   return (
     <Layout>
       <div>
-        {/* Welcome Section */}
+        {/* Welcome */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             Welcome back, {user?.name}! 👋
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-slate-400">
             Here's what's happening with your inventory today.
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link
-            to="/products"
-            className="card hover:shadow-lg transition-all hover:scale-105"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
-              </div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.overview.totalProducts}
-            </h3>
-            <p className="text-sm text-gray-600">Total Products</p>
-            {stats.inventory.lowStockCount > 0 && (
-              <p className="text-xs text-orange-600 mt-2 font-medium">
-                ⚠️ {stats.inventory.lowStockCount} low stock
-              </p>
-            )}
-          </Link>
+        {/* ── Stat Cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            {
+              label: 'Total Products',
+              value: stats.overview.totalProducts,
+              icon: Package,
+              iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+              iconColor: 'text-blue-600 dark:text-blue-400',
+              sub: stats.inventory.lowStockCount > 0
+                ? `⚠️ ${stats.inventory.lowStockCount} low stock`
+                : 'All stocked up',
+              subColor: stats.inventory.lowStockCount > 0
+                ? 'text-orange-500' : 'text-green-500',
+              href: '/products',
+            },
+            {
+              label: 'Total Orders',
+              value: stats.overview.totalOrders,
+              icon: ShoppingCart,
+              iconBg: 'bg-green-100 dark:bg-green-900/40',
+              iconColor: 'text-green-600 dark:text-green-400',
+              sub: stats.orders.pending > 0
+                ? `📋 ${stats.orders.pending} pending`
+                : 'No pending orders',
+              subColor: stats.orders.pending > 0
+                ? 'text-blue-500' : 'text-green-500',
+              href: '/orders',
+            },
+            {
+              label: 'Total Revenue',
+              value: `৳${(stats.overview.totalRevenue / 1000).toFixed(0)}K`,
+              icon: DollarSign,
+              iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+              iconColor: 'text-purple-600 dark:text-purple-400',
+              sub: `This month: ৳${(stats.overview.monthlyRevenue / 1000).toFixed(0)}K`,
+              subColor: 'text-green-500',
+              href: null,
+            },
+            {
+              label: 'Total Users',
+              value: stats.overview.totalUsers,
+              icon: User,
+              iconBg: 'bg-orange-100 dark:bg-orange-900/40',
+              iconColor: 'text-orange-600 dark:text-orange-400',
+              sub: 'Registered accounts',
+              subColor: 'text-gray-400',
+              href: null,
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            const cardContent = (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 ${card.iconBg} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-6 h-6 ${card.iconColor}`} />
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                  {card.value}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-1">{card.label}</p>
+                <p className={`text-xs font-medium ${card.subColor}`}>{card.sub}</p>
+              </>
+            );
 
-          <Link
-            to="/orders"
-            className="card hover:shadow-lg transition-all hover:scale-105"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-green-600" />
-              </div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.overview.totalOrders}
-            </h3>
-            <p className="text-sm text-gray-600">Total Orders</p>
-            {stats.orders.pending > 0 && (
-              <p className="text-xs text-blue-600 mt-2 font-medium">
-                📋 {stats.orders.pending} pending
-              </p>
-            )}
-          </Link>
+            const cardClassName =
+              'card dark:bg-slate-800 dark:border dark:border-slate-700 hover:shadow-lg transition-all hover:-translate-y-0.5';
 
-          <div className="card hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+            return card.href ? (
+              <Link key={card.label} to={card.href} className={cardClassName}>
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={card.label} className={cardClassName}>
+                {cardContent}
               </div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">
-              ৳{(stats.overview.totalRevenue / 1000000).toFixed(2)}M
-            </h3>
-            <p className="text-sm text-gray-600">Total Revenue</p>
-            <p className="text-xs text-green-600 mt-2 font-medium">
-              This month: ৳{(stats.overview.monthlyRevenue / 1000).toFixed(0)}K
-            </p>
-          </div>
-
-          <div className="card hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <User className="w-6 h-6 text-orange-600" />
-              </div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.overview.totalUsers}
-            </h3>
-            <p className="text-sm text-gray-600">Total Users</p>
-          </div>
+            );
+          })}
         </div>
 
-        {/* Charts Row */}
+        {/* ── Charts Row ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Top Products Chart */}
-          <div className="card">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
+          {/* Top Products Bar Chart */}
+          <div className="card dark:bg-slate-800 dark:border dark:border-slate-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
               Top Selling Products
             </h3>
-            {stats.topProducts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+            {revenueChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={revenueChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" fontSize={12} />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" fontSize={11} tick={{ fill: '#64748b' }} />
+                  <YAxis fontSize={11} tick={{ fill: '#64748b' }} />
                   <Tooltip
-                    formatter={(value) => [
-                      `৳${Number(value).toLocaleString()}`,
-                      '',
-                    ]}
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: '8px',
+                      color: '#f1f5f9',
+                    }}
+                    formatter={(value) => `৳${Number(value).toLocaleString()}`}
                   />
                   <Legend />
-                  <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" />
-                  <Bar dataKey="quantity" fill="#10b981" name="Quantity Sold" />
+                  <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="quantity" fill="#10b981" name="Qty Sold" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="flex items-center justify-center h-64 text-gray-400 dark:text-slate-500">
                 No sales data available
               </div>
             )}
           </div>
 
-          {/* Category Distribution */}
-          <div className="card">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
+          {/* Category Pie Chart */}
+          <div className="card dark:bg-slate-800 dark:border dark:border-slate-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
               Category Distribution
             </h3>
             {categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={categoryData}
@@ -219,104 +212,95 @@ function Dashboard() {
                     label={({ name, percent }) =>
                       `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
                     }
-                    outerRadius={80}
-                    fill="#8884d8"
+                    outerRadius={90}
                     dataKey="value"
                   >
                     {categoryData.map((_, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: '8px',
+                      color: '#f1f5f9',
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                No products available
+              <div className="flex items-center justify-center h-64 text-gray-400 dark:text-slate-500">
+                No category data available
               </div>
             )}
           </div>
         </div>
 
-        {/* Order Status & Recent Orders */}
+        {/* ── Order Status + Recent Orders ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Order Status */}
-          <div className="card">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <div className="card dark:bg-slate-800 dark:border dark:border-slate-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Order Status
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <span className="font-medium text-gray-900">Pending</span>
-                <span className="text-2xl font-bold text-yellow-600">
-                  {stats.orders.pending}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="font-medium text-gray-900">Processing</span>
-                <span className="text-2xl font-bold text-blue-600">
-                  {stats.orders.processing}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <span className="font-medium text-gray-900">Delivered</span>
-                <span className="text-2xl font-bold text-green-600">
-                  {stats.orders.delivered}
-                </span>
-              </div>
+              {[
+                { label: 'Pending', count: stats.orders.pending, bg: 'bg-yellow-50 dark:bg-yellow-900/20', color: 'text-yellow-600 dark:text-yellow-400' },
+                { label: 'Processing', count: stats.orders.processing, bg: 'bg-blue-50 dark:bg-blue-900/20', color: 'text-blue-600 dark:text-blue-400' },
+                { label: 'Delivered', count: stats.orders.delivered, bg: 'bg-green-50 dark:bg-green-900/20', color: 'text-green-600 dark:text-green-400' },
+              ].map((s) => (
+                <div key={s.label} className={`flex items-center justify-between p-4 ${s.bg} rounded-xl`}>
+                  <span className="font-medium text-gray-900 dark:text-white">{s.label}</span>
+                  <span className={`text-2xl font-bold ${s.color}`}>{s.count}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Recent Orders */}
-          <div className="lg:col-span-2 card">
+          <div className="lg:col-span-2 card dark:bg-slate-800 dark:border dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Recent Orders</h3>
-              <Link
-                to="/orders"
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Orders</h3>
+              <Link to="/orders" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
                 View All →
               </Link>
             </div>
+
             {stats.orders.recent.length > 0 ? (
               <div className="space-y-3">
                 {stats.orders.recent.map((order) => (
-                  <div
-                    key={order._id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  <div key={order._id}
+                    className="flex items-center justify-between p-4
+                               bg-gray-50 dark:bg-slate-700/50
+                               rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700
+                               transition-colors"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white text-sm">
                           {order.orderNumber}
                         </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            order.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : order.status === 'processing'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          order.status === 'pending'    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400' :
+                          order.status === 'processing' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400' :
+                          order.status === 'delivered'  ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'
+                        }`}>
                           {order.status}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {order.orderedBy.name} •{' '}
-                        {format(new Date(order.createdAt), 'MMM dd, HH:mm')}
-                      </div>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                        {order.orderedBy.name} • {format(new Date(order.createdAt), 'MMM dd, HH:mm')}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-gray-900">
+                    <div className="text-right ml-3 flex-shrink-0">
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">
                         ৳{order.totalAmount.toLocaleString()}
-                      </div>
+                      </p>
                       <Link
                         to={`/orders/${order._id}`}
-                        className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1 mt-1"
+                        className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-1"
                       >
                         <Eye className="w-3 h-3" />
                         <span>View</span>
@@ -326,66 +310,66 @@ function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="flex items-center justify-center h-40 text-gray-400 dark:text-slate-500">
                 No recent orders
               </div>
             )}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="card">
+        {/* ── Quick Actions ── */}
+        <div className="card dark:bg-slate-800 dark:border dark:border-slate-700">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Quick Actions</h3>
-            <p className="text-sm text-gray-500">Frequently used actions</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Quick Actions</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {user?.role === 'admin' && (
-              <Link
-                to="/products/create"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-                    <Plus className="w-6 h-6 text-primary-600" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              ...(user?.role === 'admin' ? [{
+                to: '/products/create',
+                icon: Plus,
+                iconBg: 'bg-primary-100 dark:bg-primary-900/40',
+                iconColor: 'text-primary-600 dark:text-primary-400',
+                title: 'Add Product',
+                desc: 'Add new items to your inventory',
+              }] : []),
+              {
+                to: '/orders/create',
+                icon: ShoppingCart,
+                iconBg: 'bg-green-100 dark:bg-green-900/40',
+                iconColor: 'text-green-600 dark:text-green-400',
+                title: 'Create Order',
+                desc: 'Place a new order for customers',
+              },
+              {
+                to: '/products',
+                icon: Package,
+                iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+                iconColor: 'text-purple-600 dark:text-purple-400',
+                title: 'View Products',
+                desc: 'Browse and manage your inventory',
+              },
+            ].map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.title}
+                  to={action.to}
+                  className="p-5 border-2 border-dashed border-gray-200 dark:border-slate-600
+                             rounded-xl hover:border-primary-400 dark:hover:border-primary-500
+                             hover:bg-primary-50 dark:hover:bg-primary-900/20
+                             transition-all group"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center
+                                    group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-5 h-5 ${action.iconColor}`} />
+                    </div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{action.title}</h4>
                   </div>
-                  <h4 className="font-semibold text-gray-900">Add Product</h4>
-                </div>
-                <p className="text-sm text-gray-600">
-                  Add new items to your inventory
-                </p>
-              </Link>
-            )}
-
-            <Link
-              to="/orders/create"
-              className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                  <ShoppingCart className="w-6 h-6 text-green-600" />
-                </div>
-                <h4 className="font-semibold text-gray-900">Create Order</h4>
-              </div>
-              <p className="text-sm text-gray-600">
-                Place a new order for customers
-              </p>
-            </Link>
-
-            <Link
-              to="/products"
-              className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                  <Package className="w-6 h-6 text-purple-600" />
-                </div>
-                <h4 className="font-semibold text-gray-900">View Products</h4>
-              </div>
-              <p className="text-sm text-gray-600">
-                Browse and manage your inventory
-              </p>
-            </Link>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{action.desc}</p>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

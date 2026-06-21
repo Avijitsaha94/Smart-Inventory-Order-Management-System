@@ -10,7 +10,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import type { RootState } from '../../redux/store';
+import  type { RootState } from '../../redux/store';
 import { useGetOrdersQuery } from '../../redux/api/orderApi';
 import Layout from '../../components/layout/Layout';
 
@@ -108,7 +108,7 @@ function OrderList() {
         </div>
 
         {/* Filters */}
-        <div className="card mb-6">
+        <div className="card dark:bg-slate-800 dark:border dark:border-slate-700 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-gray-500" />
             <h2 className="font-semibold text-gray-900">Filters</h2>
@@ -161,7 +161,7 @@ function OrderList() {
         {data && data.data.length > 0 ? (
           <>
             {/* Desktop Table */}
-            <div className="hidden lg:block card overflow-hidden">
+            <div className="hidden lg:block card dark:bg-slate-800 dark:border dark:border-slate-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">

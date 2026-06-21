@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://smart-inventory-order-management-sy-indol.vercel.app/',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://smart-inventory-order-management-sy-indol.vercel.app/api',
   headers: {
     'Content-Type': 'application/json',
   },

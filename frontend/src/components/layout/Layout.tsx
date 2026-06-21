@@ -1,3 +1,4 @@
+import {  useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -10,11 +11,11 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
-import type { RootState } from '../../redux/store';
+import  type { RootState } from '../../redux/store';
 import { logout } from '../../redux/slices/authSlice';
 import { useGetLowStockProductsQuery } from '../../redux/api/productApi';
+import ThemeToggle from '../shared/ThemeToggle';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,7 +28,6 @@ function Layout({ children }: LayoutProps) {
   const { user } = useSelector((state: RootState) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Get low stock count
   const { data: lowStockData } = useGetLowStockProductsQuery();
   const lowStockCount = lowStockData?.count || 0;
 
@@ -44,60 +44,74 @@ function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="px-4 py-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
+      {/* ── Header ── */}
+      <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40 transition-colors">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Logo & Menu Button */}
-            <div className="flex items-center gap-4">
+            {/* Logo + Hamburger */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                {sidebarOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
+                {sidebarOpen
+                  ? <X className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+                  : <Menu className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+                }
               </button>
 
-              <Link to="/dashboard" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-white" />
+              <Link to="/dashboard" className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <Package className="w-5 h-5 text-white" />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-gray-900">
-                    Smart Inventory
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">
+                    Smart<span className="text-primary-600">Inventory</span>
                   </h1>
-                  <p className="text-xs text-gray-500">Management System</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">Management System</p>
                 </div>
               </Link>
             </div>
 
-            {/* User Info & Logout */}
-            <div className="flex items-center gap-4">
+            {/* Right Side */}
+            <div className="flex items-center gap-3">
               {/* Low Stock Alert */}
               {lowStockCount > 0 && (
                 <Link
                   to="/products?stockStatus=lowStock"
-                  className="hidden sm:flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5
+                             bg-orange-50 dark:bg-orange-900/30
+                             text-orange-700 dark:text-orange-400
+                             rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50
+                             transition-colors text-sm font-medium"
                 >
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {lowStockCount} Low Stock
-                  </span>
+                  <span>{lowStockCount} Low Stock</span>
                 </Link>
               )}
 
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
+              {/* User Info */}
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 capitalize mt-0.5">
+                  {user?.role}
+                </p>
               </div>
 
+              {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="btn btn-secondary flex items-center gap-2"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg
+                           bg-gray-100 hover:bg-gray-200
+                           dark:bg-slate-700 dark:hover:bg-slate-600
+                           text-gray-700 dark:text-gray-200
+                           transition-colors text-sm font-medium"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -108,19 +122,22 @@ function Layout({ children }: LayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
+        {/* ── Sidebar ── */}
         <aside
           className={`
-            fixed lg:sticky top-[73px] left-0 h-[calc(100vh-73px)]
-            w-64 bg-white border-r border-gray-200 z-30
-            transition-transform duration-300 lg:translate-x-0
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            fixed lg:sticky top-[61px] left-0 h-[calc(100vh-61px)] w-64
+            bg-white dark:bg-slate-800
+            border-r border-gray-200 dark:border-slate-700
+            z-30 transition-all duration-300
+            lg:translate-x-0
+            ${sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
           `}
         >
-          <nav className="p-4 space-y-2">
+          <nav className="p-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path ||
+                location.pathname.startsWith(item.path + '/');
 
               return (
                 <Link
@@ -128,48 +145,51 @@ function Layout({ children }: LayoutProps) {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg
-                    transition-colors font-medium
-                    ${
-                      isActive
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                    flex items-center gap-3 px-4 py-3 rounded-xl
+                    font-medium transition-all
+                    ${isActive
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5 flex-shrink-0" />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* User Info Mobile */}
-          <div className="sm:hidden p-4 border-t border-gray-200">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-primary-700 font-semibold">
-                  {user?.name.charAt(0)}
+          {/* User Info (Mobile) */}
+          <div className="sm:hidden absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-xl">
+              <div className="w-9 h-9 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-primary-700 dark:text-primary-400 font-bold text-sm">
+                  {user?.name?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 capitalize">
+                  {user?.role}
+                </p>
               </div>
             </div>
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
+        {/* Overlay (Mobile) */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-20 lg:hidden backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 min-h-[calc(100vh-73px)]">
+        {/* ── Main Content ── */}
+        <main className="flex-1 p-4 lg:p-8 min-h-[calc(100vh-61px)] bg-gray-50 dark:bg-slate-900 transition-colors">
           {children}
         </main>
       </div>
