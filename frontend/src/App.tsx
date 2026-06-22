@@ -10,6 +10,7 @@ import Register from './pages/auth/Register';
 // Main Pages
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 
 // Product Pages
 import ProductList from './pages/products/ProductList';
@@ -54,6 +55,7 @@ function App() {
 
         {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         {/* Product Routes */}
         <Route path="/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />

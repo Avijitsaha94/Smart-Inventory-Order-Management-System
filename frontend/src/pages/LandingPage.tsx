@@ -2,26 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiX, SiGithub } from "@icons-pack/react-simple-icons";
 import {
-  Package,
-  ShoppingCart,
-  BarChart3,
-  Shield,
-  Zap,
-  Bell,
-  CheckCircle,
-  Menu,
-  X,
-  ArrowRight,
-  Star,
-  TrendingUp,
-  Users,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  Phone,
-  MapPin,
+  Package, ShoppingCart, BarChart3, Shield, Zap, Bell,
+  CheckCircle, Menu, X, ArrowRight, Star, TrendingUp,
+  Users, Clock, ChevronDown, ChevronUp, Mail, Phone,
+  MapPin
 } from 'lucide-react';
+import ThemeToggle from '../components/shared/ThemeToggle';
 
 // ─── Navbar ────────────────────────────────────────────────────────────────
 function Navbar() {
@@ -59,9 +45,10 @@ function Navbar() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <Link
               to="/login"
-              className="text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors"
+              className="text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-primary-600 transition-colors"
             >
               Log in
             </Link>
@@ -741,12 +728,6 @@ function CTASection() {
 
 // ─── Footer ─────────────────────────────────────────────────────────────────
 function Footer() {
-  const socialLinks = [
-    { Icon: SiGithub, href: 'https://github.com/Avijitsaha94', label: 'GitHub' },
-
-    { Icon: SiX, href: '#', label: 'X (Twitter)' },
-  ];
-
   return (
     <footer className="bg-gray-900 text-gray-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -767,20 +748,20 @@ function Footer() {
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
-              {socialLinks.map(({ Icon, href, label }) => (
+              {[
+                { icon: SiGithub, href: 'https://github.com/Avijitsaha94', label: 'GitHub' },
+             
+                { icon: SiX, href: '#', label: 'Twitter' },
+              ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center transition-colors group"
+                  className="w-9 h-9 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center transition-colors"
                   aria-label={label}
                 >
-                  <Icon
-                    size={16}
-                    color="currentColor"
-                    className="text-gray-400 group-hover:text-white transition-colors"
-                  />
+                  <Icon className="w-4 h-4 text-gray-400 hover:text-white" />
                 </a>
               ))}
             </div>

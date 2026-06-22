@@ -1,25 +1,22 @@
-import express from 'express';
-
-import {
+const express = require('express');
+const router = express.Router();
+const {
   registerUser,
   loginUser,
   getMe,
-} from '../controllers/authController.js';
+  updateProfile,
+  changePassword,
+} = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
+const { registerValidation, loginValidation } = require('../middleware/validators');
 
-import { protect } from '../middleware/authMiddleware.js';
-
-import {
-  registerValidation,
-  loginValidation,
-} from '../middleware/validators.js';
-
-const router = express.Router();
-
-// 🔓 Public routes (with validation)
+// Public routes
 router.post('/register', registerValidation, registerUser);
 router.post('/login', loginValidation, loginUser);
 
-// 🔐 Private route
+// Private routes
 router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
+router.put('/change-password', protect, changePassword);
 
-export default router;
+module.exports = router;

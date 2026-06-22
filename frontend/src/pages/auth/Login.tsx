@@ -6,7 +6,7 @@ import { LogIn, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { setCredentials } from '../../redux/slices/authSlice';
 import axiosInstance from '../../utils/axios';
-import  type { AuthResponse, LoginCredentials } from '../../types';
+import type { AuthResponse, LoginCredentials } from '../../types';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 
 function Login() {

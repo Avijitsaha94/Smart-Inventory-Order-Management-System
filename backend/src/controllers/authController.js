@@ -1,30 +1,20 @@
-// controllers/authController.js
-
-import User from '../models/User.js';
-import generateToken from '../config/generateToken.js';
-import asyncHandler from '../middleware/asyncHandler.js';
-import { ErrorResponse } from '../middleware/errorMiddleware.js';
+const User = require('../models/User');
+const generateToken = require('../config/generateToken');
+const asyncHandler = require('../middleware/asyncHandler');
+const { ErrorResponse } = require('../middleware/errorMiddleware');
 
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
-export const registerUser = asyncHandler(async (req, res, next) => {
+const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, password, role } = req.body;
 
-  // Check if user already exists
   const userExists = await User.findOne({ email });
-
   if (userExists) {
     return next(new ErrorResponse('User already exists with this email', 400));
   }
 
-  // Create user
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role: role || 'user',
-  });
+  const user = await User.create({ name, email, password, role: role || 'user' });
 
   res.status(201).json({
     success: true,
@@ -41,24 +31,15 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-export const loginUser = asyncHandler(async (req, res, next) => {
+const loginUser = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Find user by email (include password)
   const user = await User.findOne({ email }).select('+password');
+  if (!user) return next(new ErrorResponse('Invalid credentials', 401));
 
-  if (!user) {
-    return next(new ErrorResponse('Invalid credentials', 401));
-  }
+  const isMatch = await user.matchPassword(password);
+  if (!isMatch) return next(new ErrorResponse('Invalid credentials', 401));
 
-  // Check if password matches
-  const isPasswordMatch = await user.matchPassword(password);
-
-  if (!isPasswordMatch) {
-    return next(new ErrorResponse('Invalid credentials', 401));
-  }
-
-  // Send response with token
   res.status(200).json({
     success: true,
     data: {
@@ -74,11 +55,71 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private
-export const getMe = asyncHandler(async (req, res, next) => {
+const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
+  res.status(200).json({ success: true, data: user });
+});
+
+// @desc    Update profile (name, email)
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = asyncHandler(async (req, res, next) => {
+  const { name, email } = req.body;
+
+  // Check if email already taken by another user
+  if (email) {
+    const emailExists = await User.findOne({
+      email,
+      _id: { $ne: req.user.id },
+    });
+    if (emailExists) {
+      return next(new ErrorResponse('Email already in use', 400));
+    }
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { name, email },
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({ success: true, data: user });
+});
+
+// @desc    Change password
+// @route   PUT /api/auth/change-password
+// @access  Private
+const changePassword = asyncHandler(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return next(new ErrorResponse('Please provide current and new password', 400));
+  }
+
+  if (newPassword.length < 6) {
+    return next(new ErrorResponse('New password must be at least 6 characters', 400));
+  }
+
+  const user = await User.findById(req.user.id).select('+password');
+
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    return next(new ErrorResponse('Current password is incorrect', 401));
+  }
+
+  user.password = newPassword;
+  await user.save();
 
   res.status(200).json({
     success: true,
-    data: user,
+    message: 'Password changed successfully',
   });
 });
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getMe,
+  updateProfile,
+  changePassword,
+};

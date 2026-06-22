@@ -10,7 +10,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import  type { RootState } from '../../redux/store';
+import type { RootState } from '../../redux/store';
 import { useGetOrdersQuery } from '../../redux/api/orderApi';
 import Layout from '../../components/layout/Layout';
 
