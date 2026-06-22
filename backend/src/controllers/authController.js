@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const generateToken = require('../config/generateToken');
-const asyncHandler = require('../middleware/asyncHandler');
-const { ErrorResponse } = require('../middleware/errorMiddleware');
+import User from '../models/User.js';
+import generateToken from '../config/generateToken.js';
+import asyncHandler from '../middleware/asyncHandler.js';
+import { ErrorResponse } from '../middleware/errorMiddleware.js';
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -66,7 +66,6 @@ const getMe = asyncHandler(async (req, res) => {
 const updateProfile = asyncHandler(async (req, res, next) => {
   const { name, email } = req.body;
 
-  // Check if email already taken by another user
   if (email) {
     const emailExists = await User.findOne({
       email,
@@ -116,10 +115,4 @@ const changePassword = asyncHandler(async (req, res, next) => {
   });
 });
 
-module.exports = {
-  registerUser,
-  loginUser,
-  getMe,
-  updateProfile,
-  changePassword,
-};
+export { registerUser, loginUser, getMe, updateProfile, changePassword };
