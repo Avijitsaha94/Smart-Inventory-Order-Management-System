@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import  type { Order, OrdersResponse, CreateOrderData } from '../../types';
+import type { Order, OrdersResponse, CreateOrderData } from '../../types';
 
 export const orderApi = createApi({
   reducerPath: 'orderApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://smart-inventory-order-management-sy-indol.vercel.app/',
+    baseUrl: 'http://localhost:5000/api',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) {
@@ -25,6 +25,7 @@ export const orderApi = createApi({
         status?: string;
         startDate?: string;
         endDate?: string;
+        sort?: string;
       }
     >({
       query: (params) => ({

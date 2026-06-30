@@ -16,7 +16,7 @@ import {
 } from '../../redux/api/userApi';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../redux/store';
-import { useDebounce, useSort, useToast } from '../../hooks';
+import { useDebounce, useToast } from '../../hooks';
 
 // ── Skeleton Row ─────────────────────────────────────────────────────────────
 function SkeletonRow() {
@@ -44,12 +44,11 @@ function UsersManagement() {
   const [roleFilter, setRoleFilter] = useState(role);
 
   // ── Custom Hooks ─────────────────────────────────────────────────────────
-  const { handleSort, getSortDirection} = useSort('-createdAt');
   const debouncedSearch = useDebounce(searchInput, 500);
   const { success: toastSuccess, error: toastError } = useToast();
 
   const { data, isLoading, error } = useGetUsersQuery({
-    page, limit: 10, search: debouncedSearch, role, sort
+    page, limit: 10, search: debouncedSearch, role, sort,
   });
   const { data: statsData } = useGetUserStatsQuery();
   const [updateRole] = useUpdateUserRoleMutation();
@@ -57,7 +56,18 @@ function UsersManagement() {
 
   const stats = statsData?.data;
 
-  // Sort icon helper
+  // ── Sort helpers ─────────────────────────────────────────────────────────
+  const handleSort = (field: string) => {
+    const newSort = sort === `-${field}` ? field : `-${field}`;
+    setSearchParams({ ...Object.fromEntries(searchParams), sort: newSort, page: '1' });
+  };
+
+  const getSortDirection = (field: string): 'asc' | 'desc' | null => {
+    if (sort === `-${field}`) return 'desc';
+    if (sort ===   field    ) return 'asc';
+    return null;
+  };
+
   const SortIcon = ({ field }: { field: string }) => {
     const dir = getSortDirection(field);
     if (dir === 'desc') return <ChevronDown className="w-3.5 h-3.5 text-primary-500" />;
@@ -65,7 +75,7 @@ function UsersManagement() {
     return <ChevronDown className="w-3.5 h-3.5 text-gray-300 dark:text-slate-600" />;
   };
 
-  // Handle search
+  // ── Search handlers ──────────────────────────────────────────────────────
   const handleSearch = () => {
     const params: Record<string, string> = { page: '1' };
     if (searchInput) params.search = searchInput;
@@ -75,11 +85,12 @@ function UsersManagement() {
   };
 
   const handleClear = () => {
-    setSearchInput(''); setRoleFilter('');
+    setSearchInput('');
+    setRoleFilter('');
     setSearchParams({ sort: '-createdAt' });
   };
 
-  // Handle role change
+  // ── Role change ──────────────────────────────────────────────────────────
   const handleRoleChange = async (userId: string, newRole: string, userName: string) => {
     if (!window.confirm(`Change ${userName}'s role to ${newRole}?`)) return;
     try {
@@ -90,7 +101,7 @@ function UsersManagement() {
     }
   };
 
-  // Handle delete
+  // ── Delete ───────────────────────────────────────────────────────────────
   const handleDelete = async (userId: string, userName: string) => {
     if (!window.confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
     try {
@@ -172,7 +183,7 @@ function UsersManagement() {
             <div className="md:col-span-2">
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Search by name or email... (auto-search)"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -236,7 +247,7 @@ function UsersManagement() {
                           className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
                           {col.label}
-                          {getSortIcon(col.field)}
+                          <SortIcon field={col.field} />
                         </button>
                       ) : (
                         col.label
