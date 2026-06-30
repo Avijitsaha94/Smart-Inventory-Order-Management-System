@@ -12,10 +12,7 @@ import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 
-import {
-  errorHandler,
-  notFound,
-} from './middleware/errorMiddleware.js';
+import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
 const app = express();
 
@@ -32,7 +29,13 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/.*\.vercel\.app$/.test(origin); // allow all Vercel preview/prod URLs
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -80,14 +83,12 @@ app.use(errorHandler);
 // ── Start Server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(
-      `📍 Environment: ${process.env.NODE_ENV || 'development'}`
-    );
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 URL: http://localhost:${PORT}`);
-  }
-});
+  });
+}
 
 export default app;
