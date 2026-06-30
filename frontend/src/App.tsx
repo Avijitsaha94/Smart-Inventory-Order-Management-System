@@ -1,84 +1,137 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSelector } from 'react-redux';
-import type { RootState } from './redux/store';
+import  type { RootState } from './redux/store';
+
+// ── Lazy Loaded Pages ─────────────────────────────────────────────────────────
+// Public Pages
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const About       = lazy(() => import('./pages/About'));
+const Contact     = lazy(() => import('./pages/Contact'));
+const NotFound    = lazy(() => import('./pages/NotFound'));
 
 // Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
+const Login    = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
 
-// Main Pages
-import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
+// Protected Pages
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile   = lazy(() => import('./pages/Profile'));
 
 // Product Pages
-import ProductList from './pages/products/ProductList';
-import ProductForm from './pages/products/ProductForm';
-import ProductDetail from './pages/products/ProductDetail';
+const ProductList   = lazy(() => import('./pages/products/ProductList'));
+const ProductForm   = lazy(() => import('./pages/products/ProductForm'));
+const ProductDetail = lazy(() => import('./pages/products/ProductDetail'));
 
 // Order Pages
-import OrderList from './pages/orders/OrderList';
-import CreateOrder from './pages/orders/CreateOrder';
-import OrderDetail from './pages/orders/OrderDetail';
+const OrderList   = lazy(() => import('./pages/orders/OrderList'));
+const CreateOrder = lazy(() => import('./pages/orders/CreateOrder'));
+const OrderDetail = lazy(() => import('./pages/orders/OrderDetail'));
 
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Admin Pages
+const UsersManagement = lazy(() => import('./pages/admin/UsersManagement'));
+
+// ── Loading Spinner ───────────────────────────────────────────────────────────
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900
+                    flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block w-10 h-10 border-4
+                        border-primary-600 border-t-transparent
+                        rounded-full animate-spin mb-4" />
+        <p className="text-gray-500 dark:text-slate-400 text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Route Guards ──────────────────────────────────────────────────────────────
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
-};
+}
 
-// Public Route (redirect if already logged in)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
-};
+}
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
 function App() {
   return (
     <Router>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            borderRadius: '12px',
+            fontWeight: '500',
+            fontSize: '14px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+            duration: 4000,
+          },
+        }}
+      />
 
-      <Routes>
-        {/* Landing Page - Public */}
-        <Route path="/" element={<LandingPage />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* ── Public Pages ── */}
+          <Route path="/"        element={<LandingPage />} />
+          <Route path="/about"   element={<About />} />
+          <Route path="/contact" element={<Contact />} />
 
-        {/* Auth Routes */}
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          {/* ── Auth Routes ── */}
+          <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          {/* ── Protected Routes ── */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-        {/* Product Routes */}
-        <Route path="/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
-        <Route path="/products/create" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
-        <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
-        <Route path="/products/:id/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
+          {/* Product Routes */}
+          <Route path="/products"          element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
+          <Route path="/products/create"   element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
+          <Route path="/products/:id"      element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
+          <Route path="/products/:id/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
 
-        {/* Order Routes */}
-        <Route path="/orders" element={<ProtectedRoute><OrderList /></ProtectedRoute>} />
-        <Route path="/orders/create" element={<ProtectedRoute><CreateOrder /></ProtectedRoute>} />
-        <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+          {/* Order Routes */}
+          <Route path="/orders"          element={<ProtectedRoute><OrderList /></ProtectedRoute>} />
+          <Route path="/orders/create"   element={<ProtectedRoute><CreateOrder /></ProtectedRoute>} />
+          <Route path="/orders/:id"      element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
 
-        {/* 404 */}
-        <Route path="*" element={
-          <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="text-center">
-              <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-              <p className="text-xl text-gray-600 mb-6">Page not found</p>
-              <a href="/" className="btn btn-primary">Go Home</a>
-            </div>
-          </div>
-        } />
-      </Routes>
+          {/* ── Admin Only Routes ── */}
+          <Route path="/admin/users" element={<AdminRoute><UsersManagement /></AdminRoute>} />
+
+          {/* ── Redirects ── */}
+          <Route path="/home" element={<Navigate to="/" replace />} />
+
+          {/* ── 404 ── */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

@@ -8,6 +8,27 @@ export interface User {
   updatedAt: string;
 }
 
+// Pagination Meta
+export interface PaginationMeta {
+  count: number;
+  total: number;
+  page: number;
+  pages: number;
+}
+
+// Generic API Response
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+// Generic Paginated Response
+export interface PaginatedResponse<T> extends PaginationMeta {
+  success: boolean;
+  data: T[];
+}
+
 export interface AuthResponse {
   success: boolean;
   data: {

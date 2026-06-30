@@ -1,11 +1,11 @@
 import {  useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import type { ReactNode } from 'react';
+import type {ReactNode} from 'react';
 import {
   Package, ShoppingCart, LayoutDashboard,
   LogOut, Menu, X, AlertCircle,
-  User, ChevronDown, Settings,
+  User, ChevronDown, Settings, Users,
 } from 'lucide-react';
 import type { RootState } from '../../redux/store';
 import { logout } from '../../redux/slices/authSlice';
@@ -156,6 +156,9 @@ function Layout({ children }: LayoutProps) {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/products', label: 'Products', icon: Package },
     { path: '/orders', label: 'Orders', icon: ShoppingCart },
+    ...(user?.role === 'admin' ? [
+      { path: '/admin/users', label: 'Users', icon: Users },
+    ] : []),
     { path: '/profile', label: 'Profile', icon: User },
   ];
 

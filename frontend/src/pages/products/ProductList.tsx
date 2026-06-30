@@ -1,30 +1,48 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Plus, Search, Filter, Package,
   AlertCircle, Edit, Trash2, Eye,
+  ChevronUp, ChevronDown,
 } from 'lucide-react';
-import  type { RootState } from '../../redux/store';
+import type { RootState } from '../../redux/store';
 import { useGetProductsQuery, useDeleteProductMutation } from '../../redux/api/productApi';
 import Layout from '../../components/layout/Layout';
-import toast from 'react-hot-toast';
+import { useDebounce, useToast } from '../../hooks';
 
 const CATEGORIES = ['Electronics','Clothing','Food','Books','Furniture','Toys','Sports','Others'];
 
-// ── Skeleton Card ────────────────────────────────────────────────────────────
+// ── Category color map ────────────────────────────────────────────────────────
+const getCategoryColor = (category: string) => {
+  const map: Record<string, string> = {
+    Electronics: 'bg-blue-400',
+    Clothing:    'bg-pink-400',
+    Food:        'bg-green-400',
+    Books:       'bg-yellow-400',
+    Furniture:   'bg-orange-400',
+    Toys:        'bg-purple-400',
+    Sports:      'bg-teal-400',
+    Others:      'bg-gray-400',
+  };
+  return map[category] || 'bg-gray-400';
+};
+
+// ── Skeleton Card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="card dark:bg-slate-800 dark:border dark:border-slate-700 animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-lg" />
-        <div className="w-20 h-6 bg-gray-200 dark:bg-slate-700 rounded-full" />
-      </div>
+    <div
+      className="card dark:bg-slate-800 dark:border dark:border-slate-700
+                 animate-pulse flex flex-col"
+      style={{ minHeight: '380px' }}
+    >
+      {/* Image skeleton */}
+      <div className="w-full h-36 bg-gray-200 dark:bg-slate-700 rounded-xl mb-4" />
       <div className="h-5 bg-gray-200 dark:bg-slate-700 rounded mb-2 w-3/4" />
       <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded mb-1 w-full" />
       <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded mb-4 w-2/3" />
-      <div className="flex justify-between mb-4 pb-4 border-b border-gray-100 dark:border-slate-700">
+      <div className="flex justify-between mb-4 pb-4 border-b border-gray-100 dark:border-slate-700 mt-auto">
         <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-1/3" />
         <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-1/4" />
       </div>
@@ -42,41 +60,86 @@ function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const page = parseInt(searchParams.get('page') || '1');
-  const search = searchParams.get('search') || '';
-  const category = searchParams.get('category') || '';
+  // ── URL params ──────────────────────────────────────────────────────────────
+  const page        = parseInt(searchParams.get('page')  || '1');
+  const search      = searchParams.get('search')      || '';
+  const category    = searchParams.get('category')    || '';
   const stockStatus = searchParams.get('stockStatus') || '';
+  const sort        = searchParams.get('sort')        || '-createdAt';
 
-  const [searchInput, setSearchInput] = useState(search);
+  // ── Local state ─────────────────────────────────────────────────────────────
+  const [searchInput,    setSearchInput]    = useState(search);
   const [categoryFilter, setCategoryFilter] = useState(category);
-  const [stockFilter, setStockFilter] = useState(stockStatus);
+  const [stockFilter,    setStockFilter]    = useState(stockStatus);
 
-  const { data, isLoading, error } = useGetProductsQuery({ page, limit: 12, search, category, stockStatus });
+  // ── Custom hooks ────────────────────────────────────────────────────────────
+  const debouncedSearch = useDebounce(searchInput, 500);
+  const { success: toastSuccess, error: toastError } = useToast();
+
+  // Auto-search when debounced value changes
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (debouncedSearch) params.search      = debouncedSearch;
+    if (categoryFilter)  params.category    = categoryFilter;
+    if (stockFilter)     params.stockStatus = stockFilter;
+    if (sort)            params.sort        = sort;
+    setSearchParams(params);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
+  // ── API ─────────────────────────────────────────────────────────────────────
+  const { data, isLoading, error } = useGetProductsQuery({
+    page, limit: 12, search, category, stockStatus, sort,
+  });
   const [deleteProduct] = useDeleteProductMutation();
 
+  // ── Sort helpers ────────────────────────────────────────────────────────────
+  const handleSort = (field: string) => {
+    const newSort = sort === `-${field}` ? field : `-${field}`;
+    setSearchParams({ ...Object.fromEntries(searchParams), sort: newSort, page: '1' });
+  };
+
+  const getSortDirection = (field: string): 'asc' | 'desc' | null => {
+    if (sort === `-${field}`) return 'desc';
+    if (sort ===   field    ) return 'asc';
+    return null;
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    const dir = getSortDirection(field);
+    if (dir === 'desc') return <ChevronDown className="w-3.5 h-3.5 text-primary-500" />;
+    if (dir === 'asc')  return <ChevronUp   className="w-3.5 h-3.5 text-primary-500" />;
+    return <ChevronDown className="w-3.5 h-3.5 text-gray-300 dark:text-slate-600" />;
+  };
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSearch = () => {
     const params: Record<string, string> = {};
-    if (searchInput) params.search = searchInput;
-    if (categoryFilter) params.category = categoryFilter;
-    if (stockFilter) params.stockStatus = stockFilter;
+    if (searchInput)    params.search      = searchInput;
+    if (categoryFilter) params.category    = categoryFilter;
+    if (stockFilter)    params.stockStatus = stockFilter;
+    if (sort)           params.sort        = sort;
     setSearchParams(params);
   };
 
   const handleClear = () => {
-    setSearchInput(''); setCategoryFilter(''); setStockFilter('');
-    setSearchParams({});
+    setSearchInput('');
+    setCategoryFilter('');
+    setStockFilter('');
+    setSearchParams({ sort: '-createdAt' });
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Delete "${name}"?`)) return;
     try {
       await deleteProduct(id).unwrap();
-      toast.success('Product deleted successfully');
+      toastSuccess('Product deleted successfully');
     } catch (err: any) {
-      toast.error(err.data?.message || 'Failed to delete product');
+      toastError(err.data?.message || 'Failed to delete product');
     }
   };
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   const getStockBadge = (status: string) => {
     const map: Record<string, string> = {
       'In Stock':     'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400',
@@ -90,6 +153,7 @@ function ProductList() {
     );
   };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <Layout>
       <div>
@@ -97,27 +161,29 @@ function ProductList() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Products</h1>
-            <p className="text-gray-500 dark:text-slate-400 mt-1">Manage your inventory products</p>
+            <p className="text-gray-500 dark:text-slate-400 mt-1">
+              {data ? `${data.total} products found` : 'Manage your inventory products'}
+            </p>
           </div>
           {user?.role === 'admin' && (
             <Link to="/products/create" className="btn btn-primary flex items-center gap-2 w-fit">
-              <Plus className="w-5 h-5" />
-              <span>Add Product</span>
+              <Plus className="w-5 h-5" /><span>Add Product</span>
             </Link>
           )}
         </div>
 
-        {/* Filters */}
+        {/* ── Filters ── */}
         <div className="card dark:bg-slate-800 dark:border dark:border-slate-700 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-gray-500 dark:text-slate-400" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Filters</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Filters & Sorting</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="md:col-span-2">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search products... (auto-search)"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -142,13 +208,53 @@ function ProductList() {
               <option value="outOfStock">Out of Stock</option>
             </select>
           </div>
-          <div className="flex gap-2 mt-4">
+
+          {/* Sort Buttons */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <span className="text-sm text-gray-500 dark:text-slate-400 self-center">Sort by:</span>
+            {[
+              { label: 'Name',  field: 'name'      },
+              { label: 'Price', field: 'price'     },
+              { label: 'Stock', field: 'stock'     },
+              { label: 'Date',  field: 'createdAt' },
+            ].map((s) => (
+              <button
+                key={s.field}
+                onClick={() => handleSort(s.field)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  sort === s.field || sort === `-${s.field}`
+                    ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400'
+                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                }`}
+              >
+                {s.label}
+                <SortIcon field={s.field} />
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
             <button onClick={handleSearch} className="btn btn-primary flex items-center gap-2">
               <Search className="w-4 h-4" /><span>Search</span>
             </button>
-            <button onClick={handleClear} className="btn btn-secondary">Clear</button>
+            <button
+              onClick={handleClear}
+              className="btn btn-secondary dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+            >
+              Clear
+            </button>
           </div>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="card bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 mb-6">
+            <div className="flex items-center gap-3 text-red-800 dark:text-red-400">
+              <AlertCircle className="w-5 h-5" />
+              <p>Failed to load products. Please try again.</p>
+            </div>
+          </div>
+        )}
 
         {/* Loading Skeleton */}
         {isLoading && (
@@ -157,17 +263,7 @@ function ProductList() {
           </div>
         )}
 
-        {/* Error */}
-        {error && (
-          <div className="card bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <div className="flex items-center gap-3 text-red-800 dark:text-red-400">
-              <AlertCircle className="w-5 h-5" />
-              <p>Failed to load products. Please try again.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Products Grid */}
+        {/* ── Products Grid ── */}
         {!isLoading && data && data.data.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -176,14 +272,30 @@ function ProductList() {
                   key={product._id}
                   className="card dark:bg-slate-800 dark:border dark:border-slate-700
                              hover:shadow-lg transition-all flex flex-col"
-                  style={{ minHeight: '320px' }}
+                  style={{ minHeight: '380px' }}
                 >
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                  {/* ── Product Image ── */}
+                  <div
+                    className="relative w-full h-36 rounded-xl overflow-hidden mb-4
+                                bg-gradient-to-br from-primary-50 to-blue-50
+                                dark:from-slate-700 dark:to-slate-600
+                                flex items-center justify-center flex-shrink-0"
+                  >
+                    {/* Category color accent */}
+                    <div className={`absolute inset-0 opacity-20 ${getCategoryColor(product.category)}`} />
+                    <Package className="w-14 h-14 text-primary-400 dark:text-primary-500 relative z-10" />
+                    {/* Stock badge */}
+                    <div className="absolute top-2 right-2 z-10">
+                      {getStockBadge(product.stockStatus)}
                     </div>
-                    {getStockBadge(product.stockStatus)}
+                    {/* Category badge */}
+                    <div className="absolute bottom-2 left-2 z-10">
+                      <span className="px-2 py-0.5 bg-white/80 dark:bg-slate-900/80
+                                       text-gray-700 dark:text-slate-200
+                                       rounded-md text-xs font-medium backdrop-blur-sm">
+                        {product.category}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Info */}
@@ -197,7 +309,8 @@ function ProductList() {
                   </div>
 
                   {/* Price & Stock */}
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-3 pb-3
+                                  border-b border-gray-100 dark:border-slate-700">
                     <div>
                       <p className="text-xs text-gray-400 dark:text-slate-500">Price</p>
                       <p className="text-lg font-bold text-gray-900 dark:text-white">
@@ -214,7 +327,6 @@ function ProductList() {
 
                   {/* Meta */}
                   <div className="space-y-1 mb-4 text-xs text-gray-500 dark:text-slate-400">
-                    <p>Category: <span className="font-medium text-gray-700 dark:text-slate-300">{product.category}</span></p>
                     <p>SKU: <span className="font-medium text-gray-700 dark:text-slate-300">{product.sku}</span></p>
                   </div>
 
@@ -289,9 +401,13 @@ function ProductList() {
         {!isLoading && data && data.data.length === 0 && (
           <div className="text-center py-16">
             <Package className="w-16 h-16 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No products found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No products found
+            </h3>
             <p className="text-gray-500 dark:text-slate-400 mb-6">
-              {search || category || stockStatus ? 'Try adjusting your filters' : 'Get started by adding your first product'}
+              {search || category || stockStatus
+                ? 'Try adjusting your filters'
+                : 'Get started by adding your first product'}
             </p>
             {user?.role === 'admin' && (
               <Link to="/products/create" className="btn btn-primary inline-flex items-center gap-2">

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SiX, SiGithub } from "@icons-pack/react-simple-icons";
 import {
   Package, ShoppingCart, BarChart3, Shield, Zap, Bell,
   CheckCircle, Menu, X, ArrowRight, Star, TrendingUp,
   Users, Clock, ChevronDown, ChevronUp, Mail, Phone,
   MapPin
 } from 'lucide-react';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import ThemeToggle from '../components/shared/ThemeToggle';
 
 // ─── Navbar ────────────────────────────────────────────────────────────────
@@ -38,9 +38,12 @@ function Navbar() {
             <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors">
               Pricing
             </a>
-            <a href="#faq" className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors">
-              FAQ
-            </a>
+            <Link to="/about" className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors">
+              About
+            </Link>
+            <Link to="/contact" className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors">
+              Contact
+            </Link>
           </div>
 
           {/* CTA Buttons */}
@@ -75,7 +78,8 @@ function Navbar() {
             <a href="#features" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">Features</a>
             <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">How It Works</a>
             <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">Pricing</a>
-            <a href="#faq" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">FAQ</a>
+            <Link to="/about" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">About</Link>
+            <Link to="/contact" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700 hover:text-primary-600 py-2">Contact</Link>
             <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
               <Link to="/login" className="btn btn-secondary text-center text-sm">Log in</Link>
               <Link to="/register" className="btn btn-primary text-center text-sm">Get Started Free</Link>
@@ -749,9 +753,9 @@ function Footer() {
             {/* Social Links */}
             <div className="flex gap-3">
               {[
-                { icon: SiGithub, href: 'https://github.com/Avijitsaha94', label: 'GitHub' },
-             
-                { icon: SiX, href: '#', label: 'Twitter' },
+                { icon: FaGithub, href: 'https://github.com/Avijitsaha94', label: 'GitHub' },
+                { icon: FaLinkedin, href: 'https://linkedin.com/in/avijitsh94', label: 'LinkedIn' },
+               
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
@@ -786,18 +790,18 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Account Links */}
+          {/* Company Links */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Account</h4>
+            <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-3 text-sm">
               {[
-                { label: 'Login', href: '/login' },
-                { label: 'Register', href: '/register' },
-                { label: 'Dashboard', href: '/dashboard' },
-                { label: 'Products', href: '/products' },
+                { label: 'About Us', to: '/about' },
+                { label: 'Contact', to: '/contact' },
+                { label: 'Login', to: '/login' },
+                { label: 'Register', to: '/register' },
               ].map((link) => (
                 <li key={link.label}>
-                  <Link to={link.href} className="hover:text-white transition-colors">
+                  <Link to={link.to} className="hover:text-white transition-colors">
                     {link.label}
                   </Link>
                 </li>
