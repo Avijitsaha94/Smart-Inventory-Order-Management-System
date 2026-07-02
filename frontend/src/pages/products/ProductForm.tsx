@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
@@ -16,41 +16,76 @@ const CATEGORIES = [
   'Furniture','Toys','Sports','Others',
 ];
 
+const EMPTY_FORM: ProductFormData = {
+  name: '',
+  description: '',
+  price: 0,
+  category: 'Electronics',
+  stock: 0,
+  sku: '',
+  lowStockThreshold: 10,
+};
+
 function ProductForm() {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
 
-  const { data: productData } = useGetProductQuery(id!, { skip: !id });
+  const { data: productData, isLoading: isFetchingProduct } = useGetProductQuery(id!, { skip: !id });
+
+  // In edit mode, don't mount the form (and don't create its state) until the
+  // product has actually loaded. This removes the need for an effect that
+  // calls setState to "catch up" the form once data arrives — instead we
+  // seed state once, at mount time, from data we already have in hand.
+  if (isEditMode && (isFetchingProduct || !productData?.data)) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto flex justify-center py-20">
+          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <ProductFormFields
+      key={id ?? 'new'}
+      id={id}
+      isEditMode={isEditMode}
+      initialData={productData?.data}
+    />
+  );
+}
+
+function ProductFormFields({
+  id,
+  isEditMode,
+  initialData,
+}: {
+  id?: string;
+  isEditMode: boolean;
+  initialData?: ProductFormData;
+}) {
+  const navigate = useNavigate();
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  const [formData, setFormData] = useState<ProductFormData>({
-    name: '',
-    description: '',
-    price: 0,
-    category: 'Electronics',
-    stock: 0,
-    sku: '',
-    lowStockThreshold: 10,
-  });
-
-  useEffect(() => {
-    if (productData?.data && !isDataLoaded) {
-      const p = productData.data;
-      setFormData({
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        category: p.category,
-        stock: p.stock,
-        sku: p.sku,
-        lowStockThreshold: p.lowStockThreshold,
-      });
-      setIsDataLoaded(true);
-    }
-  }, [productData, isDataLoaded]);
+  // Lazy initializer runs once at mount. Because the parent above doesn't
+  // render this component until initialData is ready (and remounts it via
+  // `key` whenever `id` changes), this is enough to seed the form correctly —
+  // no effect + setState "sync" step required.
+  const [formData, setFormData] = useState<ProductFormData>(() =>
+    initialData
+      ? {
+          name: initialData.name,
+          description: initialData.description,
+          price: initialData.price,
+          category: initialData.category,
+          stock: initialData.stock,
+          sku: initialData.sku,
+          lowStockThreshold: initialData.lowStockThreshold,
+        }
+      : EMPTY_FORM
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

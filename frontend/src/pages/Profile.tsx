@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   User, Mail, Shield, Calendar, Save,
@@ -16,16 +16,44 @@ import { setCredentials } from '../redux/slices/authSlice';
 import type { RootState } from '../redux/store';
 import toast from 'react-hot-toast';
 
+type ProfileUser = NonNullable<ReturnType<typeof useGetProfileQuery>['data']>['data'];
+
 function Profile() {
+  const { data, isLoading } = useGetProfileQuery();
+
+  // Don't mount the real content (and don't create profileForm state) until
+  // the profile has actually loaded. This is what lets the child component
+  // seed its state directly from `user`, with no effect required to sync it
+  // in later.
+  if (isLoading || !data?.data) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/4" />
+            <div className="card dark:bg-slate-800 h-48" />
+            <div className="card dark:bg-slate-800 h-64" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // `key` forces a clean remount (and therefore a fresh profileForm initial
+  // state) if the underlying user ever changes, e.g. switching accounts.
+  return <ProfileContent key={data.data.email} user={data.data} />;
+}
+
+function ProfileContent({ user }: { user: ProfileUser }) {
   const dispatch = useDispatch();
   const { user: authUser } = useSelector((state: RootState) => state.auth);
 
-  const { data, isLoading } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
 
-  // Profile form state
-  const [profileForm, setProfileForm] = useState({ name: '', email: '' });
+  // Seeded once at mount time from `user`, which the parent already
+  // guarantees is loaded — no effect + setState needed to "catch up".
+  const [profileForm, setProfileForm] = useState({ name: user.name, email: user.email });
   const [profileSaved, setProfileSaved] = useState(false);
 
   // Password form state
@@ -37,13 +65,6 @@ function Profile() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  // Load profile data
-  useEffect(() => {
-    if (data?.data) {
-      setProfileForm({ name: data.data.name, email: data.data.email });
-    }
-  }, [data]);
 
   // Handle profile update
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -100,22 +121,6 @@ function Profile() {
     }
   };
 
-  const user = data?.data;
-
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/4" />
-            <div className="card dark:bg-slate-800 h-48" />
-            <div className="card dark:bg-slate-800 h-64" />
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
@@ -138,7 +143,7 @@ function Profile() {
                   <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-700
                                   rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-4xl font-bold text-white">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {user.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div className="absolute bottom-0 right-0 w-7 h-7 bg-green-500
@@ -150,20 +155,20 @@ function Profile() {
               </div>
 
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                {user?.name}
+                {user.name}
               </h2>
               <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
-                {user?.email}
+                {user.email}
               </p>
 
               {/* Role Badge */}
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-                user?.role === 'admin'
+                user.role === 'admin'
                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400'
                   : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400'
               }`}>
                 <Shield className="w-3.5 h-3.5" />
-                <span className="capitalize">{user?.role}</span>
+                <span className="capitalize">{user.role}</span>
               </span>
             </div>
 
@@ -181,7 +186,7 @@ function Profile() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Full Name</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {user?.name}
+                      {user.name}
                     </p>
                   </div>
                 </div>
@@ -194,7 +199,7 @@ function Profile() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Email Address</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white break-all">
-                      {user?.email}
+                      {user.email}
                     </p>
                   </div>
                 </div>
@@ -207,7 +212,7 @@ function Profile() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Account Role</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                      {user?.role}
+                      {user.role}
                     </p>
                   </div>
                 </div>
@@ -220,7 +225,7 @@ function Profile() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Member Since</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {user?.createdAt
+                      {user.createdAt
                         ? format(new Date(user.createdAt), 'MMM dd, yyyy')
                         : 'N/A'}
                     </p>
@@ -287,7 +292,7 @@ function Profile() {
                   <div className="input bg-gray-50 dark:bg-slate-700/50 dark:border-slate-600
                                   dark:text-slate-400 cursor-not-allowed flex items-center gap-2">
                     <Shield className="w-4 h-4 text-gray-400" />
-                    <span className="capitalize">{user?.role}</span>
+                    <span className="capitalize">{user.role}</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
                     Role cannot be changed
